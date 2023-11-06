@@ -61,17 +61,10 @@ public:
     void AddDocument(int document_id, const string& document) 
     {
         document_count_++;
+        double size = 1./countWords(document);
         for(const string& s : SplitIntoWordsNoStop(document))
         {
-            if(word_to_document_freqs_.count(s) == 0)
-            {
-            map<int, double> tmp;
-            tmp.insert({document_id, 1./countWords(document)});
-            word_to_document_freqs_.insert({s, tmp});
-            }else
-            {
-                word_to_document_freqs_[s].insert({document_id, 1./countWords(document)});
-            }
+                word_to_document_freqs_[s].insert({document_id, size});
         }
     }
 
@@ -142,7 +135,7 @@ private:
         return query_words;
     }
 
-    double calculateRelevance(const double& tf, const string& word) const
+    double CalculateRelevance(const double& tf, const string& word) const
     {
         double rel = tf * log(static_cast<double>(document_count_) / word_to_document_freqs_.at(word).size()); 
         return rel;
