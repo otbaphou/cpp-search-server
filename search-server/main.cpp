@@ -61,10 +61,10 @@ public:
     void AddDocument(int document_id, const string& document) 
     {
         document_count_++;
-        double size = 1./countWords(document);
-        for(const string& s : SplitIntoWordsNoStop(document))
+        double tf = 1./CountWords(document);
+        for(const string& word : SplitIntoWordsNoStop(document))
         {
-                word_to_document_freqs_[s].insert({document_id, size});
+                word_to_document_freqs_[word][document_id]+=tf;
         }
     }
 
@@ -99,7 +99,7 @@ private:
         return stop_words_.count(word) > 0;
     }
 
-    int countWords(const string& text) const {
+    int CountWords(const string& text) const {
         return SplitIntoWordsNoStop(text).size();
     }
     
@@ -151,7 +151,7 @@ private:
             if(word_to_document_freqs_.count(s) > 0)
                 for(auto& itr : word_to_document_freqs_.at(s))
                 {
-                 document_to_relevance[itr.first]+=calculateRelevance(itr.second, s);
+                 document_to_relevance[itr.first]+=CalculateRelevance(itr.second, s);
                 }
         }
         
