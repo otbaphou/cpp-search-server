@@ -95,17 +95,15 @@ public:
     }
     
     
-vector<Document> FindTopDocuments(const string& raw_query, const DocumentStatus status) const 
-{
-    return FindTopDocuments(raw_query, [&status](const int documentId, const DocumentStatus _status, const int rating)
-                            {return _status == status;});
-}
+    vector<Document> FindTopDocuments(const string& raw_query, const DocumentStatus status) const {
+        return FindTopDocuments(raw_query, [&status](const int documentId, const DocumentStatus _status, const int rating)
+        {return _status == status;});
+    }
     
-vector<Document> FindTopDocuments(const string& raw_query) const 
-{
-    return FindTopDocuments(raw_query, [](const int documentId, const DocumentStatus _status, const int rating)
-                            {return _status == DocumentStatus::ACTUAL;});
-}
+    vector<Document> FindTopDocuments(const string& raw_query) const {
+        return FindTopDocuments(raw_query, [](const int documentId, const DocumentStatus _status, const int rating)
+        {return _status == DocumentStatus::ACTUAL;});
+    }
 
     int GetDocumentCount() const {
         return documents_.size();
