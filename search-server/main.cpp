@@ -126,11 +126,11 @@ public:
         const Query query = ParseQuery(raw_query);
         
                 for(const string& minus_word : query.minus_words)
-            if(minus_word[0]==' ' || minus_word[0]=='-' || minus_word[minus_word.size()-1]=='-' || minus_word.empty())
+            if(minus_word[0]=='-' || minus_word[minus_word.size()-1]=='-' || minus_word.empty())
                 throw invalid_argument("FindTopDocuments: Query contains illegal minus-words!");
         
         for(const string& plus_word : query.plus_words)
-            if(plus_word[0]==' ' || plus_word[0]=='-' || plus_word[plus_word.size()-1]=='-' || plus_word.empty())
+            if(plus_word[0]=='-' || plus_word[plus_word.size()-1]=='-' || plus_word.empty())
                 throw invalid_argument("FindTopDocuments: Query contains illegal plus-words!");
         
         if(query.plus_words.size()==0)
@@ -166,18 +166,15 @@ public:
         return documents_.size();
     }
 
-    tuple<vector<string>, DocumentStatus> MatchDocument(const string& raw_query, int document_id) const {
+    tuple<vector<string>, DocumentStatus> MatchDocument(const string& raw_query, int document_id) const 
+    {
         if(!IsValidWord(raw_query))
                 throw invalid_argument("MatchDocument: Query contains invalid characters!");
+        
         const Query query = ParseQuery(raw_query);
         
         vector<string> matched_words;
         for (const string& word : query.plus_words) {
-            if(word.empty())
-                throw invalid_argument("MatchDocument: The word is empty!");
-            
-            if(!IsValidWord(word))
-                throw invalid_argument("MatchDocument: The plus-word contains invalid characters!");
             
             if (word_to_document_freqs_.count(word) == 0) {
                 continue;
@@ -190,9 +187,6 @@ public:
         for (const string& word : query.minus_words) {
             if(word.empty() || word[0] == '-' || word[word.size()-1]==' ')
                 throw invalid_argument("MatchDocument: Query contains illegal minus-words!");
-            
-            if(!IsValidWord(word))
-                throw invalid_argument("MatchDocument: The minus-word contains invalid characters!");
             
             if (word_to_document_freqs_.count(word) == 0) {
                 continue;
