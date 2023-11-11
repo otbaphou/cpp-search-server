@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <numeric>
 
 using namespace std;
 
@@ -79,23 +80,26 @@ enum class DocumentStatus {
 class SearchServer {
 public:
     
+    const double EPSILON = 1e-6;
+    
     template <typename StringContainer>
     explicit SearchServer(const StringContainer& stop_words)
     {
-            for(const string& stop_word : stop_words)
-                if(!IsValidWord(stop_word))
-                    throw invalid_argument("SearchServer: Stop word contains invalid characters!");
+        for(const string& stop_word : stop_words)
+            if(!IsValidWord(stop_word))
+                throw invalid_argument("SearchServer: Stop word contains invalid characters!");
             else
                 stop_words_.insert(stop_word);
     }
 
     explicit SearchServer(const string& stop_words_text)
+    : stop_words_(MakeUniqueNonEmptyStrings(SplitIntoWords(stop_words_text)))
     {
-            for(const string& stop_word : SplitIntoWords(stop_words_text))
-                if(!IsValidWord(stop_word))
-                    throw invalid_argument("SearchServer: Stop word contains invalid characters!");
-            else
-                stop_words_.insert(stop_word);
+        for (const string& stop_word : stop_words_) 
+        {
+            if (!IsValidWord(stop_word)) 
+                throw invalid_argument("SearchServer: Stop word contains invalid characters!");
+        }
     }
 
     void AddDocument(int document_id, const string& document, DocumentStatus status, const vector<int>& ratings) 
@@ -105,7 +109,7 @@ public:
         const vector<string> words = SplitIntoWordsNoStop(document);
         const double inv_word_count = 1.0 / words.size();
         for (const string& word : words) {
-            if(IsValidWord(word))
+                        if(IsValidWord(word))
             word_to_document_freqs_[word][document_id] += inv_word_count;
             else
                 throw invalid_argument("AddDocument: Document contains invalid characters!");
@@ -120,18 +124,7 @@ public:
         if(raw_query.empty())
             return vector<Document>();
         
-        if(!IsValidWord(raw_query))
-            throw invalid_argument("FindTopDocuments: Query contains invalid characters!");
-        
         const Query query = ParseQuery(raw_query);
-        
-                for(const string& minus_word : query.minus_words)
-            if(minus_word[0]=='-' || minus_word[minus_word.size()-1]=='-' || minus_word.empty())
-                throw invalid_argument("FindTopDocuments: Query contains illegal minus-words!");
-        
-        for(const string& plus_word : query.plus_words)
-            if(plus_word[0]=='-' || plus_word[plus_word.size()-1]=='-' || plus_word.empty())
-                throw invalid_argument("FindTopDocuments: Query contains illegal plus-words!");
         
         if(query.plus_words.size()==0)
             return vector<Document>();
@@ -139,12 +132,11 @@ public:
         auto matched_documents = FindAllDocuments(query, document_predicate);
 
         sort(matched_documents.begin(), matched_documents.end(),
-             [](const Document& lhs, const Document& rhs) {
-                 if (abs(lhs.relevance - rhs.relevance) < 1e-6) {
+             [this](const Document& lhs, const Document& rhs) {
+                 if (abs(lhs.relevance - rhs.relevance) < EPSILON) {
                      return lhs.rating > rhs.rating;
-                 } else {
+                 } 
                      return lhs.relevance > rhs.relevance;
-                 }
              });
         if (matched_documents.size() > MAX_RESULT_DOCUMENT_COUNT) {
             matched_documents.resize(MAX_RESULT_DOCUMENT_COUNT);
@@ -168,8 +160,6 @@ public:
 
     tuple<vector<string>, DocumentStatus> MatchDocument(const string& raw_query, int document_id) const 
     {
-        if(!IsValidWord(raw_query))
-                throw invalid_argument("MatchDocument: Query contains invalid characters!");
         
         const Query query = ParseQuery(raw_query);
         
@@ -185,8 +175,6 @@ public:
         }
         
         for (const string& word : query.minus_words) {
-            if(word.empty() || word[0] == '-' || word[word.size()-1]==' ')
-                throw invalid_argument("MatchDocument: Query contains illegal minus-words!");
             
             if (word_to_document_freqs_.count(word) == 0) {
                 continue;
@@ -202,10 +190,7 @@ public:
 
     int GetDocumentId(int index) const
     {
-        if(index<0||index>GetDocumentCount())
-        throw out_of_range("GetDocumentId: The index is out of range!");
-        
-        return ids_[index];
+        return ids_.at(index);
     }
     
 private:
@@ -244,10 +229,8 @@ private:
         if (ratings.empty()) {
             return 0;
         }
-        int rating_sum = 0;
-        for (const int rating : ratings) {
-            rating_sum += rating;
-        }
+        int rating_sum = accumulate(ratings.begin(), ratings.end(), 0);
+        
         return rating_sum / static_cast<int>(ratings.size());
     }
 
@@ -257,14 +240,23 @@ private:
         bool is_stop;
     };
 
-    QueryWord ParseQueryWord(string text) const {
+    QueryWord ParseQueryWord(string text) const 
+    {
         bool is_minus = false;
         // Word shouldn't be empty
         if (text[0] == '-') {
             is_minus = true;
             text = text.substr(1);
         }
-        return {text, is_minus, IsStopWord(text)};
+        if (!IsValidWord(text)) {
+            throw invalid_argument("ParseQueryWord: This Word Contains Illegal Characters!");
+        }
+
+        if (text[0] == '-' || text[text.size() - 1] == '-' || text.empty()) {
+            throw invalid_argument("ParseQueryWord: This Word Is Invalid!");
+    }
+
+    return {text, is_minus, IsStopWord(text)};
     }
 
     struct Query {
