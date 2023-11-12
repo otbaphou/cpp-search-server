@@ -82,25 +82,19 @@ public:
     
     const double EPSILON = 1e-6;
     
+    
     template <typename StringContainer>
     explicit SearchServer(const StringContainer& stop_words)
     {
-        for(const string& stop_word : stop_words)
-            if(!IsValidWord(stop_word))
-                throw invalid_argument("SearchServer: Stop word contains invalid characters!");
+            for(const string& stop_word : stop_words)
+                if(!IsValidWord(stop_word))
+                    throw invalid_argument("SearchServer: Stop word contains invalid characters!");
             else
                 stop_words_.insert(stop_word);
     }
 
     explicit SearchServer(const string& stop_words_text)
-    : stop_words_(MakeUniqueNonEmptyStrings(SplitIntoWords(stop_words_text)))
-    {
-        for (const string& stop_word : stop_words_) 
-        {
-            if (!IsValidWord(stop_word)) 
-                throw invalid_argument("SearchServer: Stop word contains invalid characters!");
-        }
-    }
+        :SearchServer(SplitIntoWords(stop_words_text)){}
 
     void AddDocument(int document_id, const string& document, DocumentStatus status, const vector<int>& ratings) 
     {
