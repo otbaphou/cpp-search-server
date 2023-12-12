@@ -8,22 +8,6 @@
 
 using namespace std;
 
-ostream& operator<<(ostream& out, const Document& document)
-{
-    out << "{ document_id = " << document.id << ", relevance = " << document.relevance << ", rating = " << document.rating << " }";
-    return out;
-}
-template <typename It>
-ostream& operator<<(ostream& out, const IteratorRange<It>& iteratorRange)
-{
-    for (auto it = iteratorRange.begin(); it < iteratorRange.end(); it++)
-    {
-        out << *it;
-    }
-
-    return out;
-}
-
 int main() {
     SearchServer search_server("and in at"s);
     RequestQueue request_queue(search_server);
